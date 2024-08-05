@@ -1,0 +1,153 @@
+# Use graphical install or text install as needed
+install
+text
+# Use 'graphical' for a graphical install
+
+# System language and keyboard
+lang en_US.UTF-8
+keyboard br-abnt2
+
+# Network configuration
+network --bootproto static --ip=10.46.0.33 --netmask=255.255.255.0 --gateway=10.46.0.1 --nameserver=10.46.0.97 --mtu=1500 --onboot yes --hostname=srv-retail-orob19.logicinfo.latm
+
+# Root password (make sure this is secure or use hashed password)
+rootpw --iscrypted $1$GNdOxq4d$aR.09YAAMmNlGi3txDf6I1
+
+# System configuration
+reboot
+authconfig --enablemd5 --enableshadow
+
+# Timezone
+timezone America/Sao_Paulo
+
+# Firewall configuration (disabled)
+firewall --disabled
+
+# SELinux configuration (disabled)
+selinux --disabled
+
+# Do not configure the X Window System
+skipx
+
+# Bootloader configuration
+bootloader --location=mbr --driveorder=sda --append="crashkernel=auto rhgb quiet"
+
+# Disk partitioning
+zerombr
+clearpart --all --initlabel --drives=sda
+# Optionally clear additional drives if used
+# clearpart --all --initlabel --drives=sdb
+
+part /boot --fstype=ext4 --size=500 --ondisk=/dev/sda
+part pv.0 --fstype=lvmpv --size=1000 --grow --ondisk=/dev/sda
+part pv.1 --fstype=lvmpv --size=1000 --grow --ondisk=/dev/sdb
+
+volgroup vg_root --pesize=4096 pv.0
+logvol / --vgname=vg_root --fstype=ext4 --size=5000 --name=rootvol
+logvol /home --vgname=vg_root --fstype=ext4 --size=100 --name=homevol
+logvol /var --vgname=vg_root --fstype=ext4 --size=5000 --name=varvol
+logvol /tmp --vgname=vg_root --fstype=ext4 --size=5000 --name=tmpvol
+logvol swap --fstype swap --name=swap --vgname=vg_root --size=8192
+
+%packages
+@Base
+@Core
+@performance
+
+# Utility packages
+xorg-x11-utils
+openmotif
+libgcc
+glibc
+glibc-devel
+libaio
+sg3_utils
+sysstat
+vim-enhanced
+kernel-devel
+libXp
+cpp
+ntp
+net-snmp
+net-snmp-utils
+tigervnc-server
+nfs-utils
+xterm
+ksh
+libtool
+unixODBC
+compat-libcap1
+gcc
+gcc-c++
+libaio-devel
+libdmx
+elfutils-libelf
+imake
+libstdc++
+libXdmcp
+xkeyboard-config
+xorg-x11-fonts-misc
+libXmu
+xorg-x11-xauth
+libxkbfile
+xorg-x11-xkb-utils
+libXpm
+libXaw
+kernel-headers
+libXext
+libXt
+libXrender
+dos2unix
+
+# Excluded packages
+-gnomemeeting
+-emacs-leim
+-emacspeak
+-arptables_jf
+-isdn4k-utils
+-kernel-pcmcia-cs
+-kernel-xen
+-xen
+-gnome-applet-vm
+-libvirt
+-virt-manager
+-Virtualization-en-US
+-piranha
+-ipvsadm
+-samba
+-samba-client
+-footmatic
+-NetworkManager
+-bluez-utils
+-dhcp6-client
+-dmraid
+-irda-utils
+-mozldap
+-nc
+-rp-pppoe
+-smartmontools
+-talk
+-wireless-tools
+-ypbind
+-psgml
+-evolution
+-evolution-data-server-devel
+-xchat
+-xdelta
+-emacs-el
+-emacs
+-nedit
+
+%end
+%post
+# Generate PEM files for SSH
+mkdir -p /root/.ssh
+ssh-keygen -t rsa -b 2048 -f /root/.ssh/id_rsa -N ''
+chmod 700 /root/.ssh
+cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
+
+# Synchronize time
+timedatectl set-ntp true
+
+%end
